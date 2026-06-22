@@ -194,7 +194,7 @@
         .modal-info-right { font-size: 0.95rem; color: #999; display: flex; flex-direction: column; gap: 12px; }
         .modal-info-right span { color: #fff; font-weight: 500; }
 
-        /* --- 4. PLAYER DE VÍDEO COMPLETO --- */
+        /* --- 4. TELA CHEIA DO PLAYER (Mista Dinâmica para Contornar Bloqueios HTTPS) --- */
         #screen-player {
             position: fixed; top:0; left:0; width:100vw; height:100vh;
             background-color: #000; z-index: 30; display: flex; flex-direction: column;
@@ -204,7 +204,8 @@
             color: white; padding: 12px 24px; font-size: 1rem; z-index: 31; border-radius: 4px;
         }
         .btn-back-player:hover { background: #222; }
-        #main-video-player { width: 100%; height: 100%; object-fit: contain; }
+        
+        #video-container { width: 100%; height: 100%; }
 
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
@@ -235,7 +236,7 @@
                     <li onclick="filtrarTipo('Filme', this)">Filmes</li>
                 </ul>
             </div>
-            <div id="user-display" class="user-badge">Usuário 🍿</div>
+            <div id="user-display" class="user-badge">Modo GitHub Data 🍿</div>
         </header>
 
         <div class="hero" id="hero-banner">
@@ -276,7 +277,7 @@
 
     <div id="screen-player" class="hidden">
         <button class="btn-back-player" onclick="fecharPlayer()">← Voltar para o PHFLIX</button>
-        <video id="main-video-player" controls autoplay></video>
+        <div id="video-container"></div>
     </div>
 
     <script>
@@ -294,14 +295,20 @@
         let dadosEpisodios = [];
         let filtroAtual = 'todos';
 
-        // Efeito visual na barra superior da Netflix
         window.addEventListener('scroll', () => {
             const nav = document.getElementById('navbar');
             if (window.scrollY > 40) nav.classList.add('scrolled');
             else nav.classList.remove('scrolled');
         });
 
-        // Função Educativa: Lê o CSV local de forma assíncrona usando a Fetch API + PapaParse
+        function obterUrlImagem(campoImagem) {
+            if (campoImagem && typeof campoImagem === 'string' && campoImagem.trim() !== "") {
+                return campoImagem;
+            }
+            return 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf';
+        }
+
+        // Função utilitária usando a biblioteca PapaParse para ler CSV local via Fetch API
         function lerCSVLocal(nomeArquivo) {
             return new Promise((resolve, reject) => {
                 Papa.parse(nomeArquivo, {
@@ -318,8 +325,8 @@
             });
         }
 
-        // 1. AUTENTICAÇÃO ATRAVÉS DO SEU ARQUIVO USUARIOS.CSV
-        async function executarLogin() {
+        // 1. AUTENTICAÇÃO VIA CSV LOCAL
+        async function ejecutarLogin() {
             const emailInput = document.getElementById('login-username').value.trim();
             const passInput = document.getElementById('login-password').value.trim();
 
@@ -331,7 +338,6 @@
             try {
                 const usuarios = await lerCSVLocal(FILE_USUARIOS);
 
-                // Busca o registro comparando strings limpas (Trata e-mail e campo de texto do CSV)
                 const contaValida = usuarios.find(u =>
                     (String(u.Email).trim().toLowerCase() === emailInput.toLowerCase() || String(u.Nome).trim().toLowerCase() === emailInput.toLowerCase()) &&
                     String(u.Senha).trim() === passInput
@@ -377,7 +383,6 @@
             }
         }
 
-        // Limpa e ignora categorias vazias que possam vir da exportação do Grid
         function categoriesFilter(list) {
             return list.filter(c => c.Nome && c.Nome.trim() !== "");
         }
@@ -385,22 +390,18 @@
         // 3. MONTAGEM DINÂMICA DA INTERFACE DE STREAMING
         function montarDestaque() {
             if (dadosBanners.length > 0 && dadosConteudos.length > 0) {
-                // Seleciona o primeiro banner cadastrado na tabela de Banners
                 const bannerAtivo = dadosBanners[0];
                 
-                // Procura se o banner ativo faz par com algum filme/série usando o ID ou Nome
                 let principal = dadosConteudos.find(c => 
                     String(c.id) === String(bannerAtivo.ID) || 
                     String(c.Nome).trim().toLowerCase() === String(bannerAtivo.Nome).trim().toLowerCase()
                 );
 
-                // Caso não encontre um vínculo, usa o primeiro conteúdo do arquivo como padrão
                 if (!principal) principal = dadosConteudos[0];
 
                 document.getElementById('hero-title').innerText = principal.Nome || "Destaque PHFLIX";
                 document.getElementById('hero-synopsis').innerText = principal.Sinopse || "Sem sinopse disponível.";
                 
-                // Define o plano de fundo preferencialmente pela imagem grande do Banner
                 const imagemFundo = bannerAtivo.Imagem || principal.Capa;
                 document.getElementById('hero-banner').style.backgroundImage = `linear-gradient(to top, #141414 5%, transparent 50%), linear-gradient(to right, rgba(0,0,0,0.7), transparent 60%), url('${imagemFundo}')`;
 
@@ -413,12 +414,10 @@
             const container = document.getElementById('rows-container');
             container.innerHTML = "";
 
-            // Se o arquivo de categorias estiver vazio, monta uma fileira de lançamentos geral
             const listaCategoriasTratada = dadosCategorias.length > 0 ? dadosCategorias : [{ id: 999, Nome: "Lançamentos" }];
 
             listaCategoriasTratada.forEach(cat => {
                 const itensFiltrados = dadosConteudos.filter(item => {
-                    // Valida se a string de categorias separadas por vírgula contém a categoria atual
                     const arrayCategorias = item.Categoria ? item.Categoria.split(',').map(c => c.trim()) : [];
                     const pertenceCat = arrayCategorias.includes(cat.Nome) || cat.id === 999;
                     const bateTipo = filtroAtual === 'todos' || item.Tipo === filtroAtual;
@@ -447,7 +446,6 @@
             });
         }
 
-        // Filtro rápido no cabeçalho (Início / Séries / Filmes)
         function filtrarTipo(tipo, elemento) {
             filtroAtual = tipo;
             document.querySelectorAll('.nav-menu li').forEach(li => li.classList.remove('active'));
@@ -455,7 +453,7 @@
             montarCarrosseis();
         }
 
-        // 4. MODAL E REPRODUÇÃO EM TELA CHEIA
+        // 4. MODAL E REPRODUÇÃO EM TELA CHEIA ADAPTADA (CORS & MIXED CONTENT BYPASS)
         function abrirModalPorId(id) {
             const item = dadosConteudos.find(c => String(c.id) === String(id));
             if (item) abrirModal(item);
@@ -474,20 +472,17 @@
             const btnPlayDireto = document.getElementById('modal-play-btn');
 
             if (item.Tipo === "Serie" || item.Tipo === "Série") {
-                // Oculta o play direto do filme e abre a seção de lista de episódios
                 btnPlayDireto.classList.add('hidden');
                 containerEps.classList.remove('hidden');
                 
                 const listaEpsDiv = document.getElementById('lista-episodios');
                 listaEpsDiv.innerHTML = "";
 
-                // Filtra os episódios relacionando a coluna 'Nome' do episódio com o 'Nome' da Série
                 const epsFiltrados = dadosEpisodios.filter(ep => 
                     String(ep.Nome).trim().toLowerCase() === String(item.Nome).trim().toLowerCase() ||
                     String(ep.Serie_Link).trim().toLowerCase() === String(item.Nome).trim().toLowerCase()
                 );
 
-                // Ordena numericamente por Temporada e depois por Episódio
                 epsFiltrados.sort((a, b) => {
                     return (parseInt(a.Temporada) - parseInt(b.Temporada)) || (parseInt(a.Episódio) - parseInt(b.Episódio));
                 });
@@ -505,7 +500,6 @@
                     listaEpsDiv.innerHTML = "<p style='color: #777; font-size:0.9rem; padding: 5px;'>Nenhum episódio associado encontrado neste repositório.</p>";
                 }
             } else {
-                // Se for Filme, ativa o botão de reprodução direta da propriedade principal
                 containerEps.classList.add('hidden');
                 btnPlayDireto.classList.remove('hidden');
                 btnPlayDireto.onclick = () => {
@@ -525,21 +519,32 @@
             document.getElementById('modal-details').classList.add('hidden');
         }
 
+        // REPRODUTOR DINÂMICO INTELIGENTE
         function iniciarVideo(url) {
             if (!url || url.trim() === "" || url === "undefined") {
                 alert("Atenção: Este conteúdo não possui uma URL de streaming válida configurada na tabela.");
                 return;
             }
-            const player = document.getElementById('main-video-player');
-            player.src = url;
+
+            const container = document.getElementById('video-container');
             document.getElementById('screen-player').classList.remove('hidden');
-            player.play();
+
+            // Se o link NÃO terminar em .mp4 ou .m3u8, significa que ele é uma página/reprodutor web externo.
+            // Nesse caso, injetamos um <iframe> para isolar o protocolo e rodar com sucesso!
+            if (!url.toLowerCase().includes('.mp4') && !url.toLowerCase().includes('.m3u8')) {
+                container.innerHTML = `<iframe src="${url}" allowfullscreen allow="autoplay" style="width: 100%; height: 100%; border: none; background: #000;"></iframe>`;
+            } else {
+                // Caso contrário, se for link direto para o arquivo do filme, renderiza a tag video nativa do HTML5
+                container.innerHTML = `<video id="main-video-player" controls autoplay style="width: 100%; height: 100%; object-fit: contain;"></video>`;
+                const player = document.getElementById('main-video-player');
+                player.src = url;
+                player.play().catch(err => console.log("Autoplay bloqueado pelo navegador, aguardando clique nos controlos."));
+            }
         }
 
         function fecharPlayer() {
-            const player = document.getElementById('main-video-player');
-            player.pause();
-            player.src = "";
+            const container = document.getElementById('video-container');
+            container.innerHTML = ""; // Limpa o iframe ou vídeo para interromper imediatamente a reprodução e áudio
             document.getElementById('screen-player').classList.add('hidden');
         }
     </script>
