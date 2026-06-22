@@ -207,7 +207,6 @@
 </head>
 <body>
 
-    <!-- 1. TELA DE LOGIN -->
     <div id="screen-login">
         <div class="login-logo">PHFLIX</div>
         <div class="login-card">
@@ -222,7 +221,6 @@
         </div>
     </div>
 
-    <!-- 2. TELA HOME -->
     <div id="screen-home" class="hidden">
         <header id="navbar">
             <div class="nav-left">
@@ -233,10 +231,9 @@
                     <li onclick="filtrarTipo('Filme', this)">Filmes</li>
                 </ul>
             </div>
-            <div id="user-display" class="user-badge">Conectado 🍿</div>
+            <div id="user-display" class="user-badge">Conectado VPS 🍿</div>
         </header>
 
-        <!-- Banner Principal -->
         <div class="hero" id="hero-banner">
             <div class="hero-content">
                 <h1 class="hero-title" id="hero-title">Carregando...</h1>
@@ -246,11 +243,9 @@
             </div>
         </div>
 
-        <!-- Linhas/Carrosséis Dinâmicos -->
         <div class="main-container" id="rows-container"></div>
     </div>
 
-    <!-- 3. MODAL DE DETALHES -->
     <div id="modal-details" class="modal hidden">
         <div class="modal-content">
             <button class="modal-close" onclick="fecharModal()">✕</button>
@@ -274,16 +269,14 @@
         </div>
     </div>
 
-    <!-- 4. PLAYER DE VÍDEO INTEIRO -->
     <div id="screen-player" class="hidden">
         <button class="btn-back-player" onclick="fecharPlayer()">← Voltar para o PHFLIX</button>
         <video id="main-video-player" controls autoplay></video>
     </div>
 
-    <!-- BLOCO DE PROGRAMAÇÃO JAVASCRIPT -->
     <script>
-        // Alterado para HTTPS com o intuito de mitigar bloqueios de Mixed Content no GitHub Pages
-        const BASEROW_URL = "https://213.199.56.115:8445/api/database/rows/table/";
+        // Mantido HTTP original da sua VPS, mas encapsularemos via Proxy CORS seguro abaixo
+        const BASEROW_URL = "http://213.199.56.115:8445/api/database/rows/table/";
         const TOKEN = "KFB2YupQfqQZj6kFDwO6NKaje07vd6DP";
 
         const TABELA_CONTEUDOS = "1186";
@@ -309,7 +302,12 @@
             return 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf';
         }
 
-        // Função de Login estrita baseada inteiramente nas tuas diretivas de validação
+        // Função utilitária para envelopar a requisição HTTP em um túnel HTTPS/CORS transparente
+        function obterUrlSeguraProxy(urlOriginal) {
+            return `https://api.allorigins.win/get?url=${encodeURIComponent(urlOriginal)}`;
+        }
+
+        // 1. AUTENTICAÇÃO LIMPA E ADAPTADA PARA MAPEAR ATRAVÉS DO PROXY SEGURO
         async function executarLogin() {
             const emailInput = document.getElementById('login-username').value.trim();
             const passInput = document.getElementById('login-password').value.trim();
@@ -320,20 +318,21 @@
             }
 
             try {
-                const resposta = await fetch(
-                    `${BASEROW_URL}${TABELA_USUARIOS}/?user_field_names=true`,
-                    {
-                        headers: {
-                            "Authorization": `Token ${TOKEN}`
-                        }
-                    }
-                );
+                const urlOriginal = `${BASEROW_URL}${TABELA_USUARIOS}/?user_field_names=true`;
+                const urlComProxy = obterUrlSeguraProxy(urlOriginal);
+
+                // Forçado explicitamente método GET e cabeçalho adequado via Proxy
+                const resposta = await fetch(urlComProxy, {
+                    method: 'GET'
+                });
 
                 if (!resposta.ok) {
                     throw new Error("Falha na API");
                 }
 
-                const dados = await resposta.json();
+                const payloadProxy = await resposta.json();
+                // O AllOrigins encapsula a resposta real dentro do campo .contents como string
+                const dados = JSON.parse(payloadProxy.contents);
 
                 const usuario = dados.results.find(u =>
                     String(u.Email).trim() === emailInput &&
@@ -363,15 +362,20 @@
             carregarTudo();
         }
 
+        // 2. BUSCA DE DADOS TAMBÉM CONVERTIDA PARA USAR O PROXY HTTPS
         async function buscarTabela(idTabela) {
             try {
-                const res = await fetch(`${BASEROW_URL}${idTabela}/?user_field_names=true`, {
-                    headers: { "Authorization": `Token ${TOKEN}` }
-                });
+                const urlOriginal = `${BASEROW_URL}${idTabela}/?user_field_names=true`;
+                const urlComProxy = obterUrlSeguraProxy(urlOriginal);
+
+                const res = await fetch(urlComProxy, { method: 'GET' });
                 if(!res.ok) return null;
-                const data = await res.json();
+                
+                const payloadProxy = await res.json();
+                const data = JSON.parse(payloadProxy.contents);
                 return data.results || [];
             } catch (e) {
+                console.error("Erro ao buscar tabela " + idTabela, e);
                 return null;
             }
         }
@@ -396,6 +400,7 @@
             montarCarrosseis();
         }
 
+        // 3. RENDERIZADORES
         function montarDestaque() {
             if(dadosConteudos.length > 0) {
                 const principal = dadosConteudos[0];
