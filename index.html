@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -207,6 +207,7 @@
 </head>
 <body>
 
+    <!-- 1. TELA DE LOGIN -->
     <div id="screen-login">
         <div class="login-logo">PHFLIX</div>
         <div class="login-card">
@@ -221,6 +222,7 @@
         </div>
     </div>
 
+    <!-- 2. TELA HOME -->
     <div id="screen-home" class="hidden">
         <header id="navbar">
             <div class="nav-left">
@@ -231,9 +233,10 @@
                     <li onclick="filtrarTipo('Filme', this)">Filmes</li>
                 </ul>
             </div>
-            <div id="user-display" class="user-badge">Modo Local 🍿</div>
+            <div id="user-display" class="user-badge">Conectado 🍿</div>
         </header>
 
+        <!-- Banner Principal -->
         <div class="hero" id="hero-banner">
             <div class="hero-content">
                 <h1 class="hero-title" id="hero-title">Carregando...</h1>
@@ -243,9 +246,11 @@
             </div>
         </div>
 
+        <!-- Linhas/Carrosséis Dinâmicos -->
         <div class="main-container" id="rows-container"></div>
     </div>
 
+    <!-- 3. MODAL DE DETALHES -->
     <div id="modal-details" class="modal hidden">
         <div class="modal-content">
             <button class="modal-close" onclick="fecharModal()">✕</button>
@@ -269,13 +274,16 @@
         </div>
     </div>
 
+    <!-- 4. PLAYER DE VÍDEO INTEIRO -->
     <div id="screen-player" class="hidden">
         <button class="btn-back-player" onclick="fecharPlayer()">← Voltar para o PHFLIX</button>
         <video id="main-video-player" controls autoplay></video>
     </div>
 
+    <!-- BLOCO DE PROGRAMAÇÃO JAVASCRIPT -->
     <script>
-        const BASEROW_URL = "http://213.199.56.115:8445/api/database/rows/table/";
+        // Alterado para HTTPS com o intuito de mitigar bloqueios de Mixed Content no GitHub Pages
+        const BASEROW_URL = "https://213.199.56.115:8445/api/database/rows/table/";
         const TOKEN = "KFB2YupQfqQZj6kFDwO6NKaje07vd6DP";
 
         const TABELA_CONTEUDOS = "1186";
@@ -287,7 +295,6 @@
         let dadosCategorias = [];
         let dadosEpisodios = [];
         let filtroAtual = 'todos';
-        let modoMock = false;
 
         window.addEventListener('scroll', () => {
             const nav = document.getElementById('navbar');
@@ -302,52 +309,51 @@
             return 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf';
         }
 
-        // 1. AUTENTICAÇÃO E TRATAMENTO DE SECURITY ORIGINS (file://)
+        // Função de Login estrita baseada inteiramente nas tuas diretivas de validação
         async function executarLogin() {
             const emailInput = document.getElementById('login-username').value.trim();
             const passInput = document.getElementById('login-password').value.trim();
 
-            if(!emailInput || !passInput) {
-                alert("Por favor, preencha o e-mail e a senha.");
-                return;
-            }
-
-            // CONTINGÊNCIA EXPLICITA PARA SEU AMBIENTE LOCAL (file://)
-            // Se usar os dados locais ou se a requisição AJAX for bloqueada pelo navegador
-            if(emailInput === "phelipe@gmail.com" && passInput === "123456") {
-                document.getElementById('user-display').innerText = "Phelipe (Offline) 🍿";
-                modoMock = true;
-                avancarParaHome();
+            if (!emailInput || !passInput) {
+                alert("Preencha o e-mail e a senha.");
                 return;
             }
 
             try {
-                const resposta = await fetch(`${BASEROW_URL}${TABELA_USUARIOS}/?user_field_names=true`, {
-                    headers: { "Authorization": `Token ${TOKEN}` }
-                });
-                
-                if(!resposta.ok) throw new Error("Erro de autorização ou resposta da VPS");
-                
-                const dados = await resposta.json();
-                const contaValida = dados.results.find(u => 
-                    String(u.Email) === emailInput && String(u.Senha) === passInput
+                const resposta = await fetch(
+                    `${BASEROW_URL}${TABELA_USUARIOS}/?user_field_names=true`,
+                    {
+                        headers: {
+                            "Authorization": `Token ${TOKEN}`
+                        }
+                    }
                 );
 
-                if (contaValida) {
-                    document.getElementById('user-display').innerText = `Olá, ${contaValida.Nome || 'User'} 🍿`;
-                    modoMock = false;
-                    avancarParaHome();
-                } else {
-                    alert("Usuário ou senha incorretos na VPS!");
+                if (!resposta.ok) {
+                    throw new Error("Falha na API");
                 }
-            } catch (erro) {
-                console.warn("Restrição de Origem (file://) ou VPS offline detetada. Rodando no modo de desenvolvimento.");
-                alert("Navegador bloqueou a requisição direta (CORS/file://). Entrando em modo simulado com as credenciais padrões.");
-                
-                // Força entrada segura caso ocorra bloqueio de segurança "CORS/Origin" no file://
-                document.getElementById('user-display').innerText = "Modo de Teste Local 🖥️";
-                modoMock = true;
+
+                const dados = await resposta.json();
+
+                const usuario = dados.results.find(u =>
+                    String(u.Email).trim() === emailInput &&
+                    String(u.Senha).trim() === passInput
+                );
+
+                if (!usuario) {
+                    alert("Usuário ou senha incorretos.");
+                    return;
+                }
+
+                document.getElementById('user-display').innerText = `Olá, ${usuario.Nome || 'Usuário'} 🍿`;
                 avancarParaHome();
+
+            } catch (erro) {
+                console.error(erro);
+                alert(
+                    "Não foi possível conectar ao servidor.\n\n" +
+                    "Verifique se sua VPS/Baserow está online e se o CORS está habilitado."
+                );
             }
         }
 
@@ -357,7 +363,6 @@
             carregarTudo();
         }
 
-        // 2. BUSCA DE DADOS ADAPTADA
         async function buscarTabela(idTabela) {
             try {
                 const res = await fetch(`${BASEROW_URL}${idTabela}/?user_field_names=true`, {
@@ -372,40 +377,25 @@
         }
 
         async function carregarTudo() {
-            let conteudos = null, categorias = null, episodios = null;
+            const [conteudos, categorias, episodios] = await Promise.all([
+                buscarTabela(TABELA_CONTEUDOS),
+                buscarTabela(TABELA_CATEGORIAS),
+                buscarTabela(TABELA_EPISODIOS)
+            ]);
 
-            if (!modoMock) {
-                [conteudos, categorias, episodios] = await Promise.all([
-                    buscarTabela(TABELA_CONTEUDOS),
-                    buscarTabela(TABELA_CATEGORIAS),
-                    buscarTabela(TABELA_EPISODIOS)
-                ]);
+            if(!conteudos) {
+                console.error("Não foi possível carregar os dados de conteúdo após o login.");
+                return;
             }
 
-            if(!conteudos || conteudos.length === 0) {
-                modoMock = true;
-                
-                dadosCategorias = [{id: 1, Nome: "Ação"}, {id: 2, Nome: "Comédia"}, {id: 3, Nome: "Terror"}];
-                dadosConteudos = [
-                    {id: 10, Nome: "O Som da Morte", Sinopse: "Um grupo de estudantes descobre um mistério aterrorizante.", Tipo: "Filme", Categoria: [{value: "Terror"}], imagem_horizontal: "https://images.unsplash.com/photo-1536440136628-849c177e76a1", imagem_vertical: "https://images.unsplash.com/photo-1594909122845-11baa439b7bf", URL_video: "http://fhd4.oneplayer.site/"},
-                    {id: 11, Nome: "Sem Salvação", Sinopse: "Ao conhecer um homem misterioso tudo muda.", Tipo: "Série", Categoria: [{value: "Ação"}], imagem_horizontal: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba", imagem_vertical: "https://images.unsplash.com/photo-1536440136628-849c177e76a1", URL_video: ""},
-                    {id: 12, Nome: "Uma Segunda Chance", Sinopse: "Kenna comete um erro do passado e tenta se reestruturar.", Tipo: "Filme", Categoria: [{value: "Comédia"}], imagem_horizontal: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c", imagem_vertical: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c", URL_video: "http://fhd4.oneplayer.site/"}
-                ];
-                dadosEpisodios = [
-                    {Nome: "Episódio 1 - O Começo", URL_video: "http://fhd4.oneplayer.site/", Conteúdos: [{id: 11}]},
-                    {Nome: "Episódio 2 - A Fuga", URL_video: "http://fhd4.oneplayer.site/", Conteúdos: [{id: 11}]}
-                ];
-            } else {
-                dadosConteudos = conteudos;
-                dadosCategorias = categorias;
-                dadosEpisodios = episodios;
-            }
+            dadosConteudos = conteudos;
+            dadosCategorias = categorias || [];
+            dadosEpisodios = episodios || [];
 
             montarDestaque();
             montarCarrosseis();
         }
 
-        // 3. RENDERIZADORES
         function montarDestaque() {
             if(dadosConteudos.length > 0) {
                 const principal = dadosConteudos[0];
@@ -463,7 +453,6 @@
             montarCarrosseis();
         }
 
-        // 4. MODAIS E REPRODUÇÃO
         function abrirModalPorId(id) {
             const item = dadosConteudos.find(c => c.id === id);
             if(item) abrirModal(item);
