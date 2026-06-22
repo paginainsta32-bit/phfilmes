@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PHFLIX</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
     <style>
-        /* --- ESTILOS INTERFACE NETFLIX --- */
+        /* --- ESTILOS VISUAIS (Identidade Dark Estilo Netflix) --- */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -30,7 +33,7 @@
         }
         button:active { transform: scale(0.98); }
 
-        /* --- 1. TELA DE LOGIN --- */
+        /* --- 1. INTERFACE DE LOGIN --- */
         #screen-login {
             background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.85)), 
                         url('https://images.unsplash.com/photo-1574375927938-d5a98e8edd86');
@@ -85,7 +88,7 @@
         }
         .btn-login:hover { background-color: #c40812; }
 
-        /* --- 2. TELA HOME (NAVBAR, BANNER, ROLLS) --- */
+        /* --- 2. INTERFACE PRINCIPAL (HOME) --- */
         header {
             background: linear-gradient(to bottom, rgba(0,0,0,0.8) 10%, rgba(0,0,0,0));
             position: fixed;
@@ -108,7 +111,7 @@
         
         .user-badge { background: #E50914; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
 
-        /* Banner Destaque Principal */
+        /* Banner de Destaque Principal */
         .hero {
             height: 80vh;
             position: relative;
@@ -136,7 +139,7 @@
         }
         .btn-info:hover { background-color: rgba(109, 109, 110, 0.4); }
 
-        /* Fileiras de Conteúdo (Rows) */
+        /* Fileiras de Carrossel (Rows) */
         .main-container { padding: 0 4% 60px 4%; margin-top: -50px; position: relative; z-index: 2; }
         .row { margin-bottom: 35px; }
         .row h2 { font-size: 1.5rem; margin-bottom: 12px; color: #fff; font-weight: bold; }
@@ -154,7 +157,7 @@
         }
         .poster:hover { transform: scale(1.08); z-index: 3; box-shadow: 0 5px 15px rgba(0,0,0,0.6); }
 
-        /* --- 3. MODAL DE DETALHES --- */
+        /* --- 3. MODAL DE DETALHES DO CONTEÚDO --- */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.85); z-index: 20;
@@ -179,7 +182,8 @@
         .modal-info-left h2 { font-size: 2.8rem; margin-bottom: 20px; font-weight: bold; }
         .modal-synopsis { color: #d2d2d2; line-height: 1.6; font-size: 1.1rem; }
         
-        .episodes-section { margin-top: 25px; border-top: 1px solid #333; padding-top: 20px; }
+        /* Lista de Episódios Condicional */
+        .episodes-section { margin-top: 25px; border-top: 1px solid #333; padding-top: 20px; max-height: 250px; overflow-y: auto; }
         .episodes-section h3 { margin-bottom: 15px; font-size: 1.3rem; }
         .episode-item { 
             display: flex; justify-content: space-between; align-items: center;
@@ -190,7 +194,7 @@
         .modal-info-right { font-size: 0.95rem; color: #999; display: flex; flex-direction: column; gap: 12px; }
         .modal-info-right span { color: #fff; font-weight: 500; }
 
-        /* --- 4. TELA CHEIA DO PLAYER --- */
+        /* --- 4. PLAYER DE VÍDEO COMPLETO --- */
         #screen-player {
             position: fixed; top:0; left:0; width:100vw; height:100vh;
             background-color: #000; z-index: 30; display: flex; flex-direction: column;
@@ -212,7 +216,7 @@
         <div class="login-card">
             <h2>Entrar</h2>
             <div class="form-group">
-                <input type="text" id="login-username" placeholder="E-mail">
+                <input type="text" id="login-username" placeholder="E-mail ou Usuário">
             </div>
             <div class="form-group">
                 <input type="password" id="login-password" placeholder="Senha">
@@ -227,17 +231,17 @@
                 <div class="logo">PHFLIX</div>
                 <ul class="nav-menu">
                     <li class="active" onclick="filtrarTipo('todos', this)">Início</li>
-                    <li onclick="filtrarTipo('Série', this)">Séries</li>
+                    <li onclick="filtrarTipo('Serie', this)">Séries</li>
                     <li onclick="filtrarTipo('Filme', this)">Filmes</li>
                 </ul>
             </div>
-            <div id="user-display" class="user-badge">Conectado VPS 🍿</div>
+            <div id="user-display" class="user-badge">Usuário 🍿</div>
         </header>
 
         <div class="hero" id="hero-banner">
             <div class="hero-content">
-                <h1 class="hero-title" id="hero-title">Carregando...</h1>
-                <p class="hero-synopsis" id="hero-synopsis">Sincronizando com a base de dados...</p>
+                <h1 class="hero-title" id="hero-title">Carregando Destaque...</h1>
+                <p class="hero-synopsis" id="hero-synopsis">Processando o catálogo do repositório...</p>
                 <button class="btn-play" id="hero-play-btn">▶ Assistir</button>
                 <button class="btn-info" id="hero-info-btn">ⓘ Mais Informações</button>
             </div>
@@ -254,16 +258,17 @@
                 <div class="modal-info-left">
                     <h2 id="modal-title">Título</h2>
                     <button class="btn-play" id="modal-play-btn" style="margin-bottom: 20px;">▶ Assistir</button>
-                    <p class="modal-synopsis" id="modal-description">Sinopse...</p>
+                    <p class="modal-synopsis" id="modal-description">Sinopse detalhada...</p>
                     
                     <div id="container-episodios" class="episodes-section hidden">
-                        <h3>Episódios</h3>
+                        <h3>Episódios Disponíveis</h3>
                         <div id="lista-episodios"></div>
                     </div>
                 </div>
                 <div class="modal-info-right">
                     <div>Tipo: <span id="modal-type">-</span></div>
                     <div>Categoria: <span id="modal-category-name">-</span></div>
+                    <div>Idioma: <span id="modal-idioma">-</span></div>
                 </div>
             </div>
         </div>
@@ -275,84 +280,72 @@
     </div>
 
     <script>
-        // Mantido HTTP original da sua VPS, mas encapsularemos via Proxy CORS seguro abaixo
-        const BASEROW_URL = "http://213.199.56.115:8445/api/database/rows/table/";
-        const TOKEN = "KFB2YupQfqQZj6kFDwO6NKaje07vd6DP";
+        // Mapeamento dos nomes exatos dos arquivos CSV salvos no repositório do seu GitHub
+        const FILE_BANNERS = "export - Baners - Grid.csv";
+        const FILE_CATEGORIAS = "export - Categorias - Grid.csv";
+        const FILE_CONTEUDOS = "export - Conteudos - Grid.csv";
+        const FILE_EPISODIOS = "export - Episódios - Grid.csv";
+        const FILE_USUARIOS = "export - Usuários - Grid.csv";
 
-        const TABELA_CONTEUDOS = "1186";
-        const TABELA_CATEGORIAS = "1190";
-        const TABELA_EPISODIOS = "1191";
-        const TABELA_USUARIOS = "1199";
-
-        let dadosConteudos = [];
+        // Coleções em cache na memória do navegador
+        let dadosBanners = [];
         let dadosCategorias = [];
+        let dadosConteudos = [];
         let dadosEpisodios = [];
         let filtroAtual = 'todos';
 
+        // Efeito visual na barra superior da Netflix
         window.addEventListener('scroll', () => {
             const nav = document.getElementById('navbar');
             if (window.scrollY > 40) nav.classList.add('scrolled');
             else nav.classList.remove('scrolled');
         });
 
-        function obterUrlImagem(campoImagem) {
-            if (campoImagem && typeof campoImagem === 'string' && campoImagem.trim() !== "") {
-                return campoImagem;
-            }
-            return 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf';
+        // Função Educativa: Lê o CSV local de forma assíncrona usando a Fetch API + PapaParse
+        function lerCSVLocal(nomeArquivo) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(nomeArquivo, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        resolve(results.data);
+                    },
+                    error: function(err) {
+                        reject(err);
+                    }
+                });
+            });
         }
 
-        // Função utilitária para envelopar a requisição HTTP em um túnel HTTPS/CORS transparente
-        function obterUrlSeguraProxy(urlOriginal) {
-            return `https://api.allorigins.win/get?url=${encodeURIComponent(urlOriginal)}`;
-        }
-
-        // 1. AUTENTICAÇÃO LIMPA E ADAPTADA PARA MAPEAR ATRAVÉS DO PROXY SEGURO
+        // 1. AUTENTICAÇÃO ATRAVÉS DO SEU ARQUIVO USUARIOS.CSV
         async function executarLogin() {
             const emailInput = document.getElementById('login-username').value.trim();
             const passInput = document.getElementById('login-password').value.trim();
 
             if (!emailInput || !passInput) {
-                alert("Preencha o e-mail e a senha.");
+                alert("Por favor, preencha o e-mail/usuário e a senha.");
                 return;
             }
 
             try {
-                const urlOriginal = `${BASEROW_URL}${TABELA_USUARIOS}/?user_field_names=true`;
-                const urlComProxy = obterUrlSeguraProxy(urlOriginal);
+                const usuarios = await lerCSVLocal(FILE_USUARIOS);
 
-                // Forçado explicitamente método GET e cabeçalho adequado via Proxy
-                const resposta = await fetch(urlComProxy, {
-                    method: 'GET'
-                });
-
-                if (!resposta.ok) {
-                    throw new Error("Falha na API");
-                }
-
-                const payloadProxy = await resposta.json();
-                // O AllOrigins encapsula a resposta real dentro do campo .contents como string
-                const dados = JSON.parse(payloadProxy.contents);
-
-                const usuario = dados.results.find(u =>
-                    String(u.Email).trim() === emailInput &&
+                // Busca o registro comparando strings limpas (Trata e-mail e campo de texto do CSV)
+                const contaValida = usuarios.find(u =>
+                    (String(u.Email).trim().toLowerCase() === emailInput.toLowerCase() || String(u.Nome).trim().toLowerCase() === emailInput.toLowerCase()) &&
                     String(u.Senha).trim() === passInput
                 );
 
-                if (!usuario) {
-                    alert("Usuário ou senha incorretos.");
-                    return;
+                if (contaValida) {
+                    document.getElementById('user-display').innerText = `Olá, ${contaValida.Nome} 🍿`;
+                    avancarParaHome();
+                } else {
+                    alert("Acesso negado! Credenciais incorretas ou não localizadas no arquivo.");
                 }
-
-                document.getElementById('user-display').innerText = `Olá, ${usuario.Nome || 'Usuário'} 🍿`;
-                avancarParaHome();
-
             } catch (erro) {
-                console.error(erro);
-                alert(
-                    "Não foi possível conectar ao servidor.\n\n" +
-                    "Verifique se sua VPS/Baserow está online e se o CORS está habilitado."
-                );
+                console.error("Erro crítico na leitura do arquivo de usuários:", erro);
+                alert("Não foi possível carregar o banco de dados de usuários local. Certifique-se de que os arquivos .csv estão na mesma pasta do index.html.");
             }
         }
 
@@ -362,53 +355,54 @@
             carregarTudo();
         }
 
-        // 2. BUSCA DE DADOS TAMBÉM CONVERTIDA PARA USAR O PROXY HTTPS
-        async function buscarTabela(idTabela) {
-            try {
-                const urlOriginal = `${BASEROW_URL}${idTabela}/?user_field_names=true`;
-                const urlComProxy = obterUrlSeguraProxy(urlOriginal);
-
-                const res = await fetch(urlComProxy, { method: 'GET' });
-                if(!res.ok) return null;
-                
-                const payloadProxy = await res.json();
-                const data = JSON.parse(payloadProxy.contents);
-                return data.results || [];
-            } catch (e) {
-                console.error("Erro ao buscar tabela " + idTabela, e);
-                return null;
-            }
-        }
-
+        // 2. EXTRAÇÃO E SINCRONIZAÇÃO EM PARALELO DOS ARQUIVOS DO GITHUB
         async function carregarTudo() {
-            const [conteudos, categorias, episodios] = await Promise.all([
-                buscarTabela(TABELA_CONTEUDOS),
-                buscarTabela(TABELA_CATEGORIAS),
-                buscarTabela(TABELA_EPISODIOS)
-            ]);
+            try {
+                const [banners, categorias, conteudos, episodios] = await Promise.all([
+                    lerCSVLocal(FILE_BANNERS),
+                    lerCSVLocal(FILE_CATEGORIAS),
+                    lerCSVLocal(FILE_CONTEUDOS),
+                    lerCSVLocal(FILE_EPISODIOS)
+                ]);
 
-            if(!conteudos) {
-                console.error("Não foi possível carregar os dados de conteúdo após o login.");
-                return;
+                dadosBanners = banners || [];
+                dadosCategorias = categoriesFilter(categorias || []);
+                dadosConteudos = conteudos || [];
+                dadosEpisodios = episodios || [];
+
+                montarDestaque();
+                montarCarrosseis();
+            } catch (e) {
+                console.error("Falha ao processar as tabelas de mídia:", e);
             }
-
-            dadosConteudos = conteudos;
-            dadosCategorias = categorias || [];
-            dadosEpisodios = episodios || [];
-
-            montarDestaque();
-            montarCarrosseis();
         }
 
-        // 3. RENDERIZADORES
+        // Limpa e ignora categorias vazias que possam vir da exportação do Grid
+        function categoriesFilter(list) {
+            return list.filter(c => c.Nome && c.Nome.trim() !== "");
+        }
+
+        // 3. MONTAGEM DINÂMICA DA INTERFACE DE STREAMING
         function montarDestaque() {
-            if(dadosConteudos.length > 0) {
-                const principal = dadosConteudos[0];
-                document.getElementById('hero-title').innerText = principal.Nome || "Sem Título";
-                document.getElementById('hero-synopsis').innerText = principal.Sinopse || "Sem sinopse.";
+            if (dadosBanners.length > 0 && dadosConteudos.length > 0) {
+                // Seleciona o primeiro banner cadastrado na tabela de Banners
+                const bannerAtivo = dadosBanners[0];
                 
-                const urlHorizontal = obterUrlImagem(principal.imagem_horizontal);
-                document.getElementById('hero-banner').style.backgroundImage = `linear-gradient(to top, #141414 5%, transparent 50%), linear-gradient(to right, rgba(0,0,0,0.7), transparent 60%), url('${urlHorizontal}')`;
+                // Procura se o banner ativo faz par com algum filme/série usando o ID ou Nome
+                let principal = dadosConteudos.find(c => 
+                    String(c.id) === String(bannerAtivo.ID) || 
+                    String(c.Nome).trim().toLowerCase() === String(bannerAtivo.Nome).trim().toLowerCase()
+                );
+
+                // Caso não encontre um vínculo, usa o primeiro conteúdo do arquivo como padrão
+                if (!principal) principal = dadosConteudos[0];
+
+                document.getElementById('hero-title').innerText = principal.Nome || "Destaque PHFLIX";
+                document.getElementById('hero-synopsis').innerText = principal.Sinopse || "Sem sinopse disponível.";
+                
+                // Define o plano de fundo preferencialmente pela imagem grande do Banner
+                const imagemFundo = bannerAtivo.Imagem || principal.Capa;
+                document.getElementById('hero-banner').style.backgroundImage = `linear-gradient(to top, #141414 5%, transparent 50%), linear-gradient(to right, rgba(0,0,0,0.7), transparent 60%), url('${imagemFundo}')`;
 
                 document.getElementById('hero-play-btn').onclick = () => verificarEPlay(principal);
                 document.getElementById('hero-info-btn').onclick = () => abrirModal(principal);
@@ -419,16 +413,19 @@
             const container = document.getElementById('rows-container');
             container.innerHTML = "";
 
-            const listaCategoriasTratada = dadosCategorias.length > 0 ? dadosCategorias : [{ id: 999, Nome: "Principais Conteúdos" }];
+            // Se o arquivo de categorias estiver vazio, monta uma fileira de lançamentos geral
+            const listaCategoriasTratada = dadosCategorias.length > 0 ? dadosCategorias : [{ id: 999, Nome: "Lançamentos" }];
 
             listaCategoriasTratada.forEach(cat => {
                 const itensFiltrados = dadosConteudos.filter(item => {
-                    const pertenceCat = (item.Categoria && item.Categoria.some(c => c.value === cat.Nome)) || cat.id === 999;
+                    // Valida se a string de categorias separadas por vírgula contém a categoria atual
+                    const arrayCategorias = item.Categoria ? item.Categoria.split(',').map(c => c.trim()) : [];
+                    const pertenceCat = arrayCategorias.includes(cat.Nome) || cat.id === 999;
                     const bateTipo = filtroAtual === 'todos' || item.Tipo === filtroAtual;
                     return pertenceCat && bateTipo;
                 });
 
-                if(itensFiltrados.length > 0) {
+                if (itensFiltrados.length > 0) {
                     let rowHtml = `
                         <div class="row">
                             <h2>${cat.Nome}</h2>
@@ -436,10 +433,9 @@
                     `;
 
                     itensFiltrados.forEach(item => {
-                        const urlVertical = obterUrlImagem(item.imagem_vertical);
                         rowHtml += `
                             <img class="poster" 
-                                 src="${urlVertical}" 
+                                 src="${item.Capa || 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf'}" 
                                  alt="${item.Nome}" 
                                  onclick="abrirModalPorId(${item.id})">
                         `;
@@ -451,6 +447,7 @@
             });
         }
 
+        // Filtro rápido no cabeçalho (Início / Séries / Filmes)
         function filtrarTipo(tipo, elemento) {
             filtroAtual = tipo;
             document.querySelectorAll('.nav-menu li').forEach(li => li.classList.remove('active'));
@@ -458,62 +455,70 @@
             montarCarrosseis();
         }
 
+        // 4. MODAL E REPRODUÇÃO EM TELA CHEIA
         function abrirModalPorId(id) {
-            const item = dadosConteudos.find(c => c.id === id);
-            if(item) abrirModal(item);
+            const item = dadosConteudos.find(c => String(c.id) === String(id));
+            if (item) abrirModal(item);
         }
 
         function abrirModal(item) {
             document.getElementById('modal-title').innerText = item.Nome;
-            document.getElementById('modal-description').innerText = item.Sinopse || "Sem sinopse.";
+            document.getElementById('modal-description').innerText = item.Sinopse || "Sem descrição disponível.";
             document.getElementById('modal-type').innerText = item.Tipo;
-            
-            const catNome = item.Categoria && item.Categoria[0] ? item.Categoria[0].value : "Geral";
-            document.getElementById('modal-category-name').innerText = catNome;
+            document.getElementById('modal-category-name').innerText = item.Categoria || "Geral";
+            document.getElementById('modal-idioma').innerText = item.Idioma || "Não especificado";
 
-            const urlHorizontal = obterUrlImagem(item.imagem_horizontal);
-            document.getElementById('modal-img').style.backgroundImage = `linear-gradient(to top, #181818 10%, transparent 60%), url('${urlHorizontal}')`;
+            document.getElementById('modal-img').style.backgroundImage = `linear-gradient(to top, #181818 10%, transparent 60%), url('${item.Capa}')`;
 
             const containerEps = document.getElementById('container-episodios');
             const btnPlayDireto = document.getElementById('modal-play-btn');
 
-            if (item.Tipo === "Série") {
+            if (item.Tipo === "Serie" || item.Tipo === "Série") {
+                // Oculta o play direto do filme e abre a seção de lista de episódios
                 btnPlayDireto.classList.add('hidden');
                 containerEps.classList.remove('hidden');
                 
                 const listaEpsDiv = document.getElementById('lista-episodios');
                 listaEpsDiv.innerHTML = "";
 
+                // Filtra os episódios relacionando a coluna 'Nome' do episódio com o 'Nome' da Série
                 const epsFiltrados = dadosEpisodios.filter(ep => 
-                    ep.Conteúdos && ep.Conteúdos.some(rel => rel.id === item.id)
+                    String(ep.Nome).trim().toLowerCase() === String(item.Nome).trim().toLowerCase() ||
+                    String(ep.Serie_Link).trim().toLowerCase() === String(item.Nome).trim().toLowerCase()
                 );
 
-                if(epsFiltrados.length > 0) {
-                    epsFiltrados.forEach((ep, index) => {
+                // Ordena numericamente por Temporada e depois por Episódio
+                epsFiltrados.sort((a, b) => {
+                    return (parseInt(a.Temporada) - parseInt(b.Temporada)) || (parseInt(a.Episódio) - parseInt(b.Episódio));
+                });
+
+                if (epsFiltrados.length > 0) {
+                    epsFiltrados.forEach((ep) => {
                         listaEpsDiv.innerHTML += `
-                            <div class="episode-item" onclick="fecharModal(); iniciarVideo('${ep.URL_video}')">
-                                <span>Eps. ${index + 1} - ${ep.Nome}</span>
+                            <div class="episode-item" onclick="fecharModal(); iniciarVideo('${ep.Link}')">
+                                <span>T${ep.Temporada}: Ep. ${ep.Episódio} - Assistir</span>
                                 <span>▶</span>
                             </div>
                         `;
                     });
                 } else {
-                    listaEpsDiv.innerHTML = "<p style='color: #666; font-size:0.9rem;'>Nenhum episódio cadastrado.</p>";
+                    listaEpsDiv.innerHTML = "<p style='color: #777; font-size:0.9rem; padding: 5px;'>Nenhum episódio associado encontrado neste repositório.</p>";
                 }
             } else {
+                // Se for Filme, ativa o botão de reprodução direta da propriedade principal
                 containerEps.classList.add('hidden');
                 btnPlayDireto.classList.remove('hidden');
                 btnPlayDireto.onclick = () => {
                     fecharModal();
-                    iniciarVideo(item.URL_video);
+                    iniciarVideo(item.Link);
                 };
             }
             document.getElementById('modal-details').classList.remove('hidden');
         }
 
         function verificarEPlay(item) {
-            if(item.Tipo === "Série") abrirModal(item);
-            else iniciarVideo(item.URL_video);
+            if (item.Tipo === "Serie" || item.Tipo === "Série") abrirModal(item);
+            else iniciarVideo(item.Link);
         }
 
         function fecharModal() {
@@ -521,8 +526,8 @@
         }
 
         function iniciarVideo(url) {
-            if(!url || url.trim() === "") {
-                alert("Aviso: Vídeo sem URL configurada.");
+            if (!url || url.trim() === "" || url === "undefined") {
+                alert("Atenção: Este conteúdo não possui uma URL de streaming válida configurada na tabela.");
                 return;
             }
             const player = document.getElementById('main-video-player');
