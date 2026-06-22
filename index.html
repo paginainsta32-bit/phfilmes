@@ -1,0 +1,548 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHFLIX</title>
+    <style>
+        /* --- ESTILOS INTERFACE NETFLIX --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #141414;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .hidden { display: none !important; }
+        
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background 0.2s, transform 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+
+        /* --- 1. TELA DE LOGIN --- */
+        #screen-login {
+            background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.85)), 
+                        url('https://images.unsplash.com/photo-1574375927938-d5a98e8edd86');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-logo {
+            color: #E50914;
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+        .login-card {
+            background-color: rgba(0, 0, 0, 0.75);
+            padding: 60px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .login-card h2 { margin-bottom: 28px; font-size: 2rem; }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px;
+            background: #333;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 1rem;
+        }
+        .form-group input:focus { background: #444; outline: none; }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background-color: #E50914;
+            color: white;
+            font-size: 1rem;
+            margin-top: 15px;
+        }
+        .btn-login:hover { background-color: #c40812; }
+
+        /* --- 2. TELA HOME (NAVBAR, BANNER, ROLLS) --- */
+        header {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 10%, rgba(0,0,0,0));
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 10;
+            padding: 20px 4%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.5s;
+        }
+        header.scrolled { background-color: #141414; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+
+        .nav-left { display: flex; align-items: center; gap: 40px; }
+        .logo { color: #E50914; font-size: 2rem; font-weight: bold; letter-spacing: 1px; }
+        .nav-menu { display: flex; list-style: none; gap: 25px; font-size: 0.95rem; }
+        .nav-menu li { cursor: pointer; color: #e5e5e5; transition: color 0.2s; }
+        .nav-menu li:hover, .nav-menu li.active { color: #fff; font-weight: bold; }
+        
+        .user-badge { background: #E50914; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
+
+        /* Banner Destaque Principal */
+        .hero {
+            height: 80vh;
+            position: relative;
+            background-size: cover;
+            background-position: center center;
+            display: flex;
+            align-items: center;
+            padding-left: 4%;
+            background-image: linear-gradient(to top, #141414 5%, transparent 50%), linear-gradient(to right, rgba(0,0,0,0.7), transparent 60%);
+            background-color: #141414;
+        }
+
+        .hero-content { max-width: 650px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); z-index: 5; }
+        .hero-title { font-size: 4rem; font-weight: bold; margin-bottom: 15px; line-height: 1.1; }
+        .hero-synopsis { font-size: 1.2rem; margin-bottom: 25px; color: #e5e5e5; line-height: 1.4; }
+        
+        .btn-play {
+            background-color: #fff; color: #000; padding: 12px 30px; font-size: 1.1rem;
+            display: inline-flex; align-items: center; gap: 10px; margin-right: 12px;
+        }
+        .btn-play:hover { background-color: rgba(255,255,255,0.75); }
+        
+        .btn-info {
+            background-color: rgba(109, 109, 110, 0.7); color: #fff; padding: 12px 30px; font-size: 1.1rem;
+        }
+        .btn-info:hover { background-color: rgba(109, 109, 110, 0.4); }
+
+        /* Fileiras de Conteúdo (Rows) */
+        .main-container { padding: 0 4% 60px 4%; margin-top: -50px; position: relative; z-index: 2; }
+        .row { margin-bottom: 35px; }
+        .row h2 { font-size: 1.5rem; margin-bottom: 12px; color: #fff; font-weight: bold; }
+        
+        .row-posters {
+            display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; padding: 15px 0;
+            scrollbar-width: none;
+        }
+        .row-posters::-webkit-scrollbar { display: none; }
+        
+        .poster {
+            width: 240px; min-width: 240px; height: 135px; object-fit: cover;
+            border-radius: 4px; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s;
+            background-color: #222;
+        }
+        .poster:hover { transform: scale(1.08); z-index: 3; box-shadow: 0 5px 15px rgba(0,0,0,0.6); }
+
+        /* --- 3. MODAL DE DETALHES --- */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); z-index: 20;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-content {
+            background-color: #181818; width: 100%; max-width: 850px; border-radius: 8px;
+            overflow: hidden; position: relative; animation: fadeIn 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+        }
+        .modal-banner {
+            height: 420px; background-size: cover; background-position: center;
+            position: relative; background-image: linear-gradient(to top, #181818 10%, transparent 60%);
+        }
+        .modal-close {
+            position: absolute; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.7); color: white;
+            border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close:hover { background: #333; }
+        
+        .modal-body { padding: 35px; display: grid; grid-template-columns: 2fr 1fr; gap: 35px; }
+        .modal-info-left h2 { font-size: 2.8rem; margin-bottom: 20px; font-weight: bold; }
+        .modal-synopsis { color: #d2d2d2; line-height: 1.6; font-size: 1.1rem; }
+        
+        .episodes-section { margin-top: 25px; border-top: 1px solid #333; padding-top: 20px; }
+        .episodes-section h3 { margin-bottom: 15px; font-size: 1.3rem; }
+        .episode-item { 
+            display: flex; justify-content: space-between; align-items: center;
+            background: #222; padding: 12px 20px; border-radius: 4px; margin-bottom: 8px; cursor: pointer;
+        }
+        .episode-item:hover { background: #2b2b2b; }
+
+        .modal-info-right { font-size: 0.95rem; color: #999; display: flex; flex-direction: column; gap: 12px; }
+        .modal-info-right span { color: #fff; font-weight: 500; }
+
+        /* --- 4. TELA CHEIA DO PLAYER --- */
+        #screen-player {
+            position: fixed; top:0; left:0; width:100vw; height:100vh;
+            background-color: #000; z-index: 30; display: flex; flex-direction: column;
+        }
+        .btn-back-player {
+            position: absolute; top: 30px; left: 30px; background: rgba(0,0,0,0.6);
+            color: white; padding: 12px 24px; font-size: 1rem; z-index: 31; border-radius: 4px;
+        }
+        .btn-back-player:hover { background: #222; }
+        #main-video-player { width: 100%; height: 100%; object-fit: contain; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div id="screen-login">
+        <div class="login-logo">PHFLIX</div>
+        <div class="login-card">
+            <h2>Entrar</h2>
+            <div class="form-group">
+                <input type="text" id="login-username" placeholder="E-mail">
+            </div>
+            <div class="form-group">
+                <input type="password" id="login-password" placeholder="Senha">
+            </div>
+            <button class="btn-login" onclick="executarLogin()">Entrar</button>
+        </div>
+    </div>
+
+    <div id="screen-home" class="hidden">
+        <header id="navbar">
+            <div class="nav-left">
+                <div class="logo">PHFLIX</div>
+                <ul class="nav-menu">
+                    <li class="active" onclick="filtrarTipo('todos', this)">Início</li>
+                    <li onclick="filtrarTipo('Série', this)">Séries</li>
+                    <li onclick="filtrarTipo('Filme', this)">Filmes</li>
+                </ul>
+            </div>
+            <div id="user-display" class="user-badge">Modo Local 🍿</div>
+        </header>
+
+        <div class="hero" id="hero-banner">
+            <div class="hero-content">
+                <h1 class="hero-title" id="hero-title">Carregando...</h1>
+                <p class="hero-synopsis" id="hero-synopsis">Sincronizando com a base de dados...</p>
+                <button class="btn-play" id="hero-play-btn">▶ Assistir</button>
+                <button class="btn-info" id="hero-info-btn">ⓘ Mais Informações</button>
+            </div>
+        </div>
+
+        <div class="main-container" id="rows-container"></div>
+    </div>
+
+    <div id="modal-details" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModal()">✕</button>
+            <div class="modal-banner" id="modal-img"></div>
+            <div class="modal-body">
+                <div class="modal-info-left">
+                    <h2 id="modal-title">Título</h2>
+                    <button class="btn-play" id="modal-play-btn" style="margin-bottom: 20px;">▶ Assistir</button>
+                    <p class="modal-synopsis" id="modal-description">Sinopse...</p>
+                    
+                    <div id="container-episodios" class="episodes-section hidden">
+                        <h3>Episódios</h3>
+                        <div id="lista-episodios"></div>
+                    </div>
+                </div>
+                <div class="modal-info-right">
+                    <div>Tipo: <span id="modal-type">-</span></div>
+                    <div>Categoria: <span id="modal-category-name">-</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-player" class="hidden">
+        <button class="btn-back-player" onclick="fecharPlayer()">← Voltar para o PHFLIX</button>
+        <video id="main-video-player" controls autoplay></video>
+    </div>
+
+    <script>
+        const BASEROW_URL = "http://213.199.56.115:8445/api/database/rows/table/";
+        const TOKEN = "KFB2YupQfqQZj6kFDwO6NKaje07vd6DP";
+
+        const TABELA_CONTEUDOS = "1186";
+        const TABELA_CATEGORIAS = "1190";
+        const TABELA_EPISODIOS = "1191";
+        const TABELA_USUARIOS = "1199";
+
+        let dadosConteudos = [];
+        let dadosCategorias = [];
+        let dadosEpisodios = [];
+        let filtroAtual = 'todos';
+        let modoMock = false;
+
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 40) nav.classList.add('scrolled');
+            else nav.classList.remove('scrolled');
+        });
+
+        function obterUrlImagem(campoImagem) {
+            if (campoImagem && typeof campoImagem === 'string' && campoImagem.trim() !== "") {
+                return campoImagem;
+            }
+            return 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf';
+        }
+
+        // 1. AUTENTICAÇÃO E TRATAMENTO DE SECURITY ORIGINS (file://)
+        async function executarLogin() {
+            const emailInput = document.getElementById('login-username').value.trim();
+            const passInput = document.getElementById('login-password').value.trim();
+
+            if(!emailInput || !passInput) {
+                alert("Por favor, preencha o e-mail e a senha.");
+                return;
+            }
+
+            // CONTINGÊNCIA EXPLICITA PARA SEU AMBIENTE LOCAL (file://)
+            // Se usar os dados locais ou se a requisição AJAX for bloqueada pelo navegador
+            if(emailInput === "phelipe@gmail.com" && passInput === "123456") {
+                document.getElementById('user-display').innerText = "Phelipe (Offline) 🍿";
+                modoMock = true;
+                avancarParaHome();
+                return;
+            }
+
+            try {
+                const resposta = await fetch(`${BASEROW_URL}${TABELA_USUARIOS}/?user_field_names=true`, {
+                    headers: { "Authorization": `Token ${TOKEN}` }
+                });
+                
+                if(!resposta.ok) throw new Error("Erro de autorização ou resposta da VPS");
+                
+                const dados = await resposta.json();
+                const contaValida = dados.results.find(u => 
+                    String(u.Email) === emailInput && String(u.Senha) === passInput
+                );
+
+                if (contaValida) {
+                    document.getElementById('user-display').innerText = `Olá, ${contaValida.Nome || 'User'} 🍿`;
+                    modoMock = false;
+                    avancarParaHome();
+                } else {
+                    alert("Usuário ou senha incorretos na VPS!");
+                }
+            } catch (erro) {
+                console.warn("Restrição de Origem (file://) ou VPS offline detetada. Rodando no modo de desenvolvimento.");
+                alert("Navegador bloqueou a requisição direta (CORS/file://). Entrando em modo simulado com as credenciais padrões.");
+                
+                // Força entrada segura caso ocorra bloqueio de segurança "CORS/Origin" no file://
+                document.getElementById('user-display').innerText = "Modo de Teste Local 🖥️";
+                modoMock = true;
+                avancarParaHome();
+            }
+        }
+
+        function avancarParaHome() {
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-home').classList.remove('hidden');
+            carregarTudo();
+        }
+
+        // 2. BUSCA DE DADOS ADAPTADA
+        async function buscarTabela(idTabela) {
+            try {
+                const res = await fetch(`${BASEROW_URL}${idTabela}/?user_field_names=true`, {
+                    headers: { "Authorization": `Token ${TOKEN}` }
+                });
+                if(!res.ok) return null;
+                const data = await res.json();
+                return data.results || [];
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function carregarTudo() {
+            let conteudos = null, categorias = null, episodios = null;
+
+            if (!modoMock) {
+                [conteudos, categorias, episodios] = await Promise.all([
+                    buscarTabela(TABELA_CONTEUDOS),
+                    buscarTabela(TABELA_CATEGORIAS),
+                    buscarTabela(TABELA_EPISODIOS)
+                ]);
+            }
+
+            if(!conteudos || conteudos.length === 0) {
+                modoMock = true;
+                
+                dadosCategorias = [{id: 1, Nome: "Ação"}, {id: 2, Nome: "Comédia"}, {id: 3, Nome: "Terror"}];
+                dadosConteudos = [
+                    {id: 10, Nome: "O Som da Morte", Sinopse: "Um grupo de estudantes descobre um mistério aterrorizante.", Tipo: "Filme", Categoria: [{value: "Terror"}], imagem_horizontal: "https://images.unsplash.com/photo-1536440136628-849c177e76a1", imagem_vertical: "https://images.unsplash.com/photo-1594909122845-11baa439b7bf", URL_video: "http://fhd4.oneplayer.site/"},
+                    {id: 11, Nome: "Sem Salvação", Sinopse: "Ao conhecer um homem misterioso tudo muda.", Tipo: "Série", Categoria: [{value: "Ação"}], imagem_horizontal: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba", imagem_vertical: "https://images.unsplash.com/photo-1536440136628-849c177e76a1", URL_video: ""},
+                    {id: 12, Nome: "Uma Segunda Chance", Sinopse: "Kenna comete um erro do passado e tenta se reestruturar.", Tipo: "Filme", Categoria: [{value: "Comédia"}], imagem_horizontal: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c", imagem_vertical: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c", URL_video: "http://fhd4.oneplayer.site/"}
+                ];
+                dadosEpisodios = [
+                    {Nome: "Episódio 1 - O Começo", URL_video: "http://fhd4.oneplayer.site/", Conteúdos: [{id: 11}]},
+                    {Nome: "Episódio 2 - A Fuga", URL_video: "http://fhd4.oneplayer.site/", Conteúdos: [{id: 11}]}
+                ];
+            } else {
+                dadosConteudos = conteudos;
+                dadosCategorias = categorias;
+                dadosEpisodios = episodios;
+            }
+
+            montarDestaque();
+            montarCarrosseis();
+        }
+
+        // 3. RENDERIZADORES
+        function montarDestaque() {
+            if(dadosConteudos.length > 0) {
+                const principal = dadosConteudos[0];
+                document.getElementById('hero-title').innerText = principal.Nome || "Sem Título";
+                document.getElementById('hero-synopsis').innerText = principal.Sinopse || "Sem sinopse.";
+                
+                const urlHorizontal = obterUrlImagem(principal.imagem_horizontal);
+                document.getElementById('hero-banner').style.backgroundImage = `linear-gradient(to top, #141414 5%, transparent 50%), linear-gradient(to right, rgba(0,0,0,0.7), transparent 60%), url('${urlHorizontal}')`;
+
+                document.getElementById('hero-play-btn').onclick = () => verificarEPlay(principal);
+                document.getElementById('hero-info-btn').onclick = () => abrirModal(principal);
+            }
+        }
+
+        function montarCarrosseis() {
+            const container = document.getElementById('rows-container');
+            container.innerHTML = "";
+
+            const listaCategoriasTratada = dadosCategorias.length > 0 ? dadosCategorias : [{ id: 999, Nome: "Principais Conteúdos" }];
+
+            listaCategoriasTratada.forEach(cat => {
+                const itensFiltrados = dadosConteudos.filter(item => {
+                    const pertenceCat = (item.Categoria && item.Categoria.some(c => c.value === cat.Nome)) || cat.id === 999;
+                    const bateTipo = filtroAtual === 'todos' || item.Tipo === filtroAtual;
+                    return pertenceCat && bateTipo;
+                });
+
+                if(itensFiltrados.length > 0) {
+                    let rowHtml = `
+                        <div class="row">
+                            <h2>${cat.Nome}</h2>
+                            <div class="row-posters">
+                    `;
+
+                    itensFiltrados.forEach(item => {
+                        const urlVertical = obterUrlImagem(item.imagem_vertical);
+                        rowHtml += `
+                            <img class="poster" 
+                                 src="${urlVertical}" 
+                                 alt="${item.Nome}" 
+                                 onclick="abrirModalPorId(${item.id})">
+                        `;
+                    });
+
+                    rowHtml += `</div></div>`;
+                    container.innerHTML += rowHtml;
+                }
+            });
+        }
+
+        function filtrarTipo(tipo, elemento) {
+            filtroAtual = tipo;
+            document.querySelectorAll('.nav-menu li').forEach(li => li.classList.remove('active'));
+            elemento.classList.add('active');
+            montarCarrosseis();
+        }
+
+        // 4. MODAIS E REPRODUÇÃO
+        function abrirModalPorId(id) {
+            const item = dadosConteudos.find(c => c.id === id);
+            if(item) abrirModal(item);
+        }
+
+        function abrirModal(item) {
+            document.getElementById('modal-title').innerText = item.Nome;
+            document.getElementById('modal-description').innerText = item.Sinopse || "Sem sinopse.";
+            document.getElementById('modal-type').innerText = item.Tipo;
+            
+            const catNome = item.Categoria && item.Categoria[0] ? item.Categoria[0].value : "Geral";
+            document.getElementById('modal-category-name').innerText = catNome;
+
+            const urlHorizontal = obterUrlImagem(item.imagem_horizontal);
+            document.getElementById('modal-img').style.backgroundImage = `linear-gradient(to top, #181818 10%, transparent 60%), url('${urlHorizontal}')`;
+
+            const containerEps = document.getElementById('container-episodios');
+            const btnPlayDireto = document.getElementById('modal-play-btn');
+
+            if (item.Tipo === "Série") {
+                btnPlayDireto.classList.add('hidden');
+                containerEps.classList.remove('hidden');
+                
+                const listaEpsDiv = document.getElementById('lista-episodios');
+                listaEpsDiv.innerHTML = "";
+
+                const epsFiltrados = dadosEpisodios.filter(ep => 
+                    ep.Conteúdos && ep.Conteúdos.some(rel => rel.id === item.id)
+                );
+
+                if(epsFiltrados.length > 0) {
+                    epsFiltrados.forEach((ep, index) => {
+                        listaEpsDiv.innerHTML += `
+                            <div class="episode-item" onclick="fecharModal(); iniciarVideo('${ep.URL_video}')">
+                                <span>Eps. ${index + 1} - ${ep.Nome}</span>
+                                <span>▶</span>
+                            </div>
+                        `;
+                    });
+                } else {
+                    listaEpsDiv.innerHTML = "<p style='color: #666; font-size:0.9rem;'>Nenhum episódio cadastrado.</p>";
+                }
+            } else {
+                containerEps.classList.add('hidden');
+                btnPlayDireto.classList.remove('hidden');
+                btnPlayDireto.onclick = () => {
+                    fecharModal();
+                    iniciarVideo(item.URL_video);
+                };
+            }
+            document.getElementById('modal-details').classList.remove('hidden');
+        }
+
+        function verificarEPlay(item) {
+            if(item.Tipo === "Série") abrirModal(item);
+            else iniciarVideo(item.URL_video);
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-details').classList.add('hidden');
+        }
+
+        function iniciarVideo(url) {
+            if(!url || url.trim() === "") {
+                alert("Aviso: Vídeo sem URL configurada.");
+                return;
+            }
+            const player = document.getElementById('main-video-player');
+            player.src = url;
+            document.getElementById('screen-player').classList.remove('hidden');
+            player.play();
+        }
+
+        function fecharPlayer() {
+            const player = document.getElementById('main-video-player');
+            player.pause();
+            player.src = "";
+            document.getElementById('screen-player').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
