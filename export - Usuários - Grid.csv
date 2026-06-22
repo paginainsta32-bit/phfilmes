@@ -1,0 +1,6 @@
+﻿id,Nome,Email,Senha,Logins,IMEI,Dias,Pagamento,Hoje,Restam,Revendedor,Data
+38443,NADIA,nadia123,12345,2,"{   ""IMEI"": ""samsung/a14ub:Android 13/TP1A.220624.014/a14"",   ""Dispositivo"": ""SM-A145M"" }{   ""IMEI"": ""motorola/cusco_g:Android 16/W1UUS36H.21-14-4-1-2/cusco"",   ""Dispositivo"": ""motorola edge 50 fusion"" }",365,2026-05-04,2026-06-22 19:40,49 days 19:40:09.689174,,2026-05-04 19:40
+38444,Nadia,Nadia@123,123456,2,,365,2026-05-04,2026-06-22 19:40,49 days 19:40:09.689174,,2026-05-04 22:18
+38445,phelipe,phelipe@gmail.com,123456,5,"{   ""IMEI"": ""samsung/a14ub:Android 13/TP1A.220624.014/a14"",   ""Dispositivo"": ""SM-A145M"" }",365,2026-05-13,2026-06-22 19:40,40 days 19:40:09.689174,,2026-05-13 13:33
+38446,phelipe,phelipe@,123456,5,,365,2026-05-17,2026-06-22 19:40,36 days 19:40:09.689174,,2026-05-17 21:52
+38447,vieira,paginainsta32@gmail.com,123456,5,,365,2026-05-16,2026-06-22 19:40,37 days 19:40:09.689174,,2026-05-17 22:46
